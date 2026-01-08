@@ -1,0 +1,262 @@
+<!doctype html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+<meta charset="utf-8">
+<title>System Reports</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<style>
+body {
+  background-color: #f4f6f9;
+  font-family: 'Segoe UI', sans-serif;
+}
+h1, h3 {
+  color: #333;
+}
+.stat-card {
+  background: #fff;
+  border-radius: 12px;
+  padding: 25px 15px;
+  text-align: center;
+  box-shadow: 0 6px 15px rgba(0,0,0,0.08);
+  transition: transform 0.2s;
+}
+.stat-card:hover {
+  transform: translateY(-5px);
+}
+.stat-card h2 {
+  margin: 0;
+  font-size: 2.2rem;
+  color: #1877f2;
+}
+.stat-card p {
+  margin: 5px 0 0;
+  font-weight: 500;
+  color: #555;
+}
+.chart-container {
+  background: #fff;
+  border-radius: 12px;
+  padding: 20px;
+  box-shadow: 0 6px 15px rgba(0,0,0,0.08);
+  height: 350px; /* Fixed height */
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center; /* Center horizontally */
+}
+.chart-container canvas {
+  max-height: 250px;  /* Limit chart size */
+  max-width: 100%;
+}
+.chart-label {
+  text-align: center;
+  margin-top: 10px;
+  font-weight: 500;
+  color: #555;
+}
+.custom-table {
+  background: #fff;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 6px 15px rgba(0,0,0,0.08);
+}
+.custom-table th, .custom-table td {
+  vertical-align: middle;
+}
+.custom-table th {
+  background-color: #1877f2;
+  color: #fff;
+}
+.custom-table tr:nth-child(even) {
+  background-color: #f2f2f2;
+}
+</style>
+</head>
+<body>
+
+<section class="app-wrapper m-4">
+  <h1 class="text-center mb-5">System Reports</h1>
+
+  <!-- STAT CARDS -->
+  <div class="row mb-5 g-4">
+    <div class="col-md-3">
+      <div class="stat-card">
+        <h2 id="totalStudents">0</h2>
+        <p>Total Students</p>
+      </div>
+    </div>
+    <div class="col-md-3">
+      <div class="stat-card">
+        <h2 id="totalAdmins">0</h2>
+        <p>Total Admins</p>
+      </div>
+    </div>
+    <div class="col-md-3">
+      <div class="stat-card">
+        <h2 id="totalOwners">0</h2>
+        <p>Total Owners</p>
+      </div>
+    </div>
+    <div class="col-md-3">
+      <div class="stat-card">
+        <h2 id="avgGrade">0</h2>
+        <p>Average Student Grade</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- CHARTS ROW 1 -->
+  <div class="row mb-4 g-4">
+    <div class="col-md-4">
+      <div class="chart-container">
+        <canvas id="countChart"></canvas>
+        <div class="chart-label">Total Count</div>
+      </div>
+    </div>
+    <div class="col-md-4">
+      <div class="chart-container">
+        <canvas id="genderChart"></canvas>
+        <div class="chart-label">Gender Distribution</div>
+      </div>
+    </div>
+    <div class="col-md-4">
+      <div class="chart-container">
+        <canvas id="gradeChart"></canvas>
+        <div class="chart-label">Grade Distribution</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- CHARTS ROW 2 -->
+  <div class="row mb-5 g-4">
+    <div class="col-md-6">
+      <div class="chart-container">
+        <canvas id="resultChart"></canvas>
+        <div class="chart-label">Results Overview</div>
+      </div>
+    </div>
+    <div class="col-md-6">
+      <div class="chart-container">
+        <canvas id="adminRoleChart"></canvas>
+        <div class="chart-label">Admin Roles</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- TOP STUDENTS TABLE -->
+  <div class="row mb-5">
+    <div class="col-12">
+      <h3 class="mb-3">Top Students by Result</h3>
+      <table class="table custom-table text-center">
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Name</th>
+            <th>Grade</th>
+            <th>Result</th>
+          </tr>
+        </thead>
+        <tbody id="topStudents"></tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<script th:inline="javascript">
+/*<![CDATA[*/
+const students = /*[[${studentsData}]]*/ [];
+const admins = /*[[${adminsData}]]*/ [];
+const owners = /*[[${ownersData}]]*/ [];
+
+// ======= STAT CARDS =======
+document.getElementById("totalStudents").innerText = students.length;
+document.getElementById("totalAdmins").innerText = admins.length;
+document.getElementById("totalOwners").innerText = owners.length;
+
+// Average grade (numeric)
+let avg = students.reduce((acc, s) => acc + (parseFloat(s.grade) || 0), 0) / (students.length || 1);
+document.getElementById("avgGrade").innerText = avg.toFixed(2);
+
+// ======= CHARTS =======
+const chartOptions = { maintainAspectRatio: true, plugins:{legend:{position:'bottom'}}, scales:{y:{beginAtZero:true}} };
+
+// Count Chart
+new Chart(document.getElementById("countChart"), {
+  type: "bar",
+  data: { labels: ["Students", "Admins", "Owners"], datasets:[{data:[students.length,admins.length,owners.length], backgroundColor:["#1877f2","#28a745","#ff6b6b"]}] },
+  options: {...chartOptions, plugins:{legend:{display:false}}}
+});
+
+// Gender Chart
+const male = students.filter(s=>s.gender==="Male").length;
+const female = students.filter(s=>s.gender==="Female").length;
+new Chart(document.getElementById("genderChart"), {
+  type: "pie",
+  data: {labels:["Male","Female"], datasets:[{data:[male,female], backgroundColor:["#42a5ff","#ff6b6b"]}]},
+  options:{maintainAspectRatio:true, plugins:{legend:{position:'bottom'}}}
+});
+
+// Grade Distribution
+const grades = {};
+students.forEach(s=>grades[s.grade]=(grades[s.grade]||0)+1);
+new Chart(document.getElementById("gradeChart"), {
+  type: "line",
+  data: { labels:Object.keys(grades), datasets:[{data:Object.values(grades), label:"Students per Grade", borderColor:"#1877f2", tension:0.3, fill:false}]},
+  options: chartOptions
+});
+
+// Result Chart
+const resultCounts = {A:0,B:0,C:0,D:0,F:0};
+students.forEach(s=>{ const r=s.result||"F"; resultCounts[r]=(resultCounts[r]||0)+1; });
+new Chart(document.getElementById("resultChart"), {
+  type: "doughnut",
+  data: {labels:Object.keys(resultCounts), datasets:[{data:Object.values(resultCounts), backgroundColor:["#28a745","#42a5ff","#ffcd38","#ff9800","#ff6b6b"]}]},
+  options:{maintainAspectRatio:true, plugins:{legend:{position:'bottom'}}}
+});
+
+//======= ADMIN ROLE CHART =======
+const roles = {};
+admins.forEach(a => roles[a.role] = (roles[a.role] || 0) + 1);
+
+// Generate different colors for each bar
+const roleColors = Object.keys(roles).map((_, i) => {
+  const colors = ["#1877f2", "#28a745", "#ff6b6b", "#ffcd38", "#9c27b0", "#00bcd4"];
+  return colors[i % colors.length];
+});
+
+new Chart(document.getElementById("adminRoleChart"), {
+  type: "bar",
+  data: {
+    labels: Object.keys(roles),
+    datasets: [{
+      label: "Admin Roles",
+      data: Object.values(roles),
+      backgroundColor: roleColors,
+      borderRadius: 6
+    }]
+  },
+  options: {
+    maintainAspectRatio: true,
+    plugins: {
+      legend: { display: false }
+    },
+    scales: {
+      y: { beginAtZero: true }
+    }
+  }
+});
+
+
+// Top Students Table
+const topStudentsBody=document.getElementById("topStudents");
+topStudentsBody.innerHTML="";
+[...students].sort((a,b)=>parseFloat(b.grade||0)-parseFloat(a.grade||0)).slice(0,10)
+.forEach((s,i)=>topStudentsBody.innerHTML+=`<tr><td>${i+1}</td><td>${s.stname}</td><td>${s.grade}</td><td>${s.result||'-'}</td></tr>`);
+/*]]>*/
+</script>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

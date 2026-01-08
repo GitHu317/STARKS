@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+<meta charset="UTF-8">
+<title>Admins</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet">
+<link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
+
+<style>
+/* (keep your existing styles as you had them) */
+:root { --primary: #1877f2; --primary-dark: #145dbf; --bg: #f0f2f5; --card: #ffffff; --text: #1c1e21; --muted: #65676b; --border: #dddfe2; --success: #28a745; --danger: #dc3545; }
+body { background: var(--bg); font-family: "Segoe UI", Helvetica, Arial, sans-serif; color: var(--text); min-height: 100vh; }
+.container { background: var(--card); border-radius: 14px; padding: 25px; box-shadow: 0 4px 20px rgba(0,0,0,0.08); margin-top: 20px; }
+h1 { font-size: 30px; font-weight: 700; color: var(--primary); text-align: center; margin-bottom: 20px; }
+.btn { border-radius: 10px; font-weight: 600; padding: 10px 18px; transition: all 0.25s ease; box-shadow: 0 4px 10px rgba(0,0,0,0.08); }
+.btn-primary { background: linear-gradient(135deg, #1877f2, #42a5ff); border: none; color: #fff; }
+.btn-primary:hover { transform: translateY(-2px); box-shadow: 0 8px 18px rgba(24,119,242,0.35); background: linear-gradient(135deg, #145dbf, #1877f2); }
+.btn-success { background: linear-gradient(135deg, #28a745, #5cd67d); border: none; color: #fff; }
+.btn-success:hover { transform: translateY(-2px) scale(1.05); box-shadow: 0 8px 18px rgba(40,167,69,0.35); }
+.btn-danger { background: linear-gradient(135deg, #dc3545, #ff6b6b); border: none; color: #fff; }
+.btn-danger:hover { transform: translateY(-2px) scale(1.05); box-shadow: 0 8px 18px rgba(220,53,69,0.35); }
+.btn-sm { width: 40px; height: 40px; border-radius: 50%; padding: 0; display: inline-flex; align-items: center; justify-content: center; font-size: 16px; }
+.table { background: var(--card); border-radius: 10px; overflow: hidden; border: 1px solid var(--border); }
+.table thead { background: #f7f8fa; }
+.table th { font-size: 13px; font-weight: 700; color: var(--muted); padding: 14px; border-bottom: 1px solid var(--border); }
+.table td { padding: 14px; vertical-align: middle; font-size: 14px; }
+.table tbody tr:hover { background: #f5f6f7; }
+.modal-content { border-radius: 14px; border: none; }
+.modal-header { background: var(--primary); color: #fff; border-radius: 14px 14px 0 0; }
+.modal-title { font-weight: 700; }
+.modal-body input, .modal-body select { width: 100%; padding: 10px 12px; border-radius: 8px; border: 1px solid var(--border); font-size: 14px; outline: none; margin-bottom: 10px; }
+.modal-body input:focus, .modal-body select:focus { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(24,119,242,0.15); }
+@media (max-width: 768px) { h1 { font-size: 24px; } table { font-size: 12px; } }
+</style>
+</head>
+
+<body>
+<div class="container">
+  <h1>Admins</h1>
+
+  <!-- Add Admin -->
+  <a href="#" class="btn btn-primary mb-3"
+     onclick="resetForm(event)">
+    Add New Admin <i class="bi bi-person-plus"></i>
+  </a>
+
+  <!-- Table -->
+  <table class="table text-center">
+    <thead>
+      <tr>
+        <th>#</th>
+        <th>Name</th>
+        <th>Role</th>
+        <th>Email</th>
+        <th>Phone</th>
+        <th>Department</th>
+        <th>Actions</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr th:each="a, i : ${admins}">
+        <td th:text="${i.count}"></td>
+        <td th:text="${a.adname}"></td>
+        <td th:text="${a.role}"></td>
+        <td th:text="${a.email}"></td>
+        <td th:text="${a.phone}"></td>
+        <td th:text="${a.department}"></td>
+        <td>
+          <a th:href="@{/admins/edit/{id}(id=${a.id})}"
+             class="btn btn-success btn-sm">
+            <i class="bi bi-pencil-square"></i>
+          </a>
+          <a th:href="@{/admins/delete/{id}(id=${a.id})}"
+             class="btn btn-danger btn-sm"
+             onclick="return confirm('Delete this admin?')">
+            <i class="bi bi-trash"></i>
+          </a>
+        </td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+<!-- Modal -->
+<div class="modal fade" id="adminModal" tabindex="-1">
+  <div class="modal-dialog modal-lg modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title"
+            th:text="${admin.id == null ? 'Add New Admin' : 'Edit Admin'}"></h5>
+        <button class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+
+      <div class="modal-body">
+        <form th:action="@{/admins/save}" th:object="${admin}" method="post" id="adminForm">
+          <input type="hidden" th:field="*{id}" id="adminId">
+
+          <input type="text" placeholder="Full Name" th:field="*{adname}" required>
+          <input type="text" placeholder="Role" th:field="*{role}" required>
+          <input type="email" placeholder="Email" th:field="*{email}">
+          <input type="text" placeholder="Phone" th:field="*{phone}">
+          <input type="text" placeholder="Department" th:field="*{department}">
+          <input type="date" placeholder="Joining Date" th:field="*{joiningDate}">
+          <input type="text" placeholder="Access" th:field="*{access}">
+
+          <div class="text-end mt-3">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            <button type="submit" class="btn btn-primary">Save</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js"></script>
+
+<script th:inline="javascript">
+/*<![CDATA[*/
+  let showModal = /*[[${showModal}]]*/ false;
+  if (showModal) {
+    new bootstrap.Modal(document.getElementById('adminModal')).show();
+  }
+
+  function resetForm(e) {
+    e.preventDefault();
+    document.getElementById('adminForm').reset();
+    document.getElementById('adminId').value = '';
+    document.querySelector('.modal-title').innerText = 'Add New Admin';
+    new bootstrap.Modal(document.getElementById('adminModal')).show();
+  }
+/*]]>*/
+</script>
+
+</body>
+</html>
