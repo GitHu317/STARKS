@@ -6,6 +6,9 @@ WORKDIR /app
 # Copy the Maven project (all files)
 COPY . .
 
+# ✅ FIX: give execute permission to mvnw
+RUN chmod +x mvnw
+
 # Build the project inside Docker (skip tests)
 RUN ./mvnw clean package -DskipTests
 
